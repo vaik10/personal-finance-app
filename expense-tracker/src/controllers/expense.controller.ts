@@ -1,5 +1,5 @@
-import {repository} from '@loopback/repository';
-import {post, requestBody, response} from '@loopback/rest';
+import {repository, Filter} from '@loopback/repository';
+import {get, param, post, requestBody, response} from '@loopback/rest';
 import {ExpenseModel} from '../models';
 import {ExpenseRepository} from '../repositories';
 
@@ -8,6 +8,32 @@ export class ExpenseController {
     @repository(ExpenseRepository)
     public expenseRepository: ExpenseRepository,
   ) {}
+
+  @get('/expenses')
+  @response(200, {
+    description: 'List of expenses',
+    content: {'application/json': {schema: {type: 'array', items: {'x-ts-type': ExpenseModel}}}},
+  })
+  async getExpenses(
+    @param.query.string('category') category?: string,
+    @param.query.string('sort') sort?: string,
+  ): Promise<ExpenseModel[]> {
+    const filter: Filter<ExpenseModel> = {};
+
+    // Filtering
+    if (category) {
+      filter.where = {
+        category,
+      };
+    }
+
+    // Sorting
+    if (sort === 'date_desc') {
+      filter.order = ['date DESC'];
+    }
+
+    return this.expenseRepository.find(filter);
+  }
 
   @post('/expenses')
   @response(200, {
