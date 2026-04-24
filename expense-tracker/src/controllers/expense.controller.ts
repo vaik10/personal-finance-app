@@ -17,7 +17,7 @@ export class ExpenseController {
   async getExpenses(
     @param.query.string('category') category?: string,
     @param.query.string('sort') sort?: string,
-  ): Promise<ExpenseModel[]> {
+  ): Promise<{data: ExpenseModel[]; total: number}> {
     const filter: Filter<ExpenseModel> = {};
 
     // Filtering
@@ -31,8 +31,14 @@ export class ExpenseController {
     if (sort === 'date_desc') {
       filter.order = ['date DESC'];
     }
+    const expenses = await this.expenseRepository.find(filter);
+    
+    const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-    return this.expenseRepository.find(filter);
+    return {
+    data: expenses,
+    total,
+  };
   }
 
   @post('/expenses')

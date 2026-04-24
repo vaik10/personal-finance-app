@@ -11,6 +11,7 @@ import path from 'path';
 import { MySequence } from './sequence';
 import {env} from './config/env';
 import { DbDataSource } from './datasources';
+import {idempotencyMiddleware} from './middleware/idempotency.middleware';
 
 export { ApplicationConfig };
 
@@ -26,6 +27,8 @@ export class ExpenseTrackerApplication extends BootMixin(
 
     // Set up the custom sequence
     this.sequence(MySequence);
+
+    this.middleware(idempotencyMiddleware);
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
