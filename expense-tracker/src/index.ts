@@ -1,4 +1,5 @@
 import { ApplicationConfig, ExpenseTrackerApplication } from './application';
+import './config/env';
 
 export * from './application';
 

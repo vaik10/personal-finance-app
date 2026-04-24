@@ -9,6 +9,7 @@ import { RestApplication } from '@loopback/rest';
 import { ServiceMixin } from '@loopback/service-proxy';
 import path from 'path';
 import { MySequence } from './sequence';
+import {env} from './config/env';
 
 export { ApplicationConfig };
 
@@ -17,6 +18,8 @@ export class ExpenseTrackerApplication extends BootMixin(
 ) {
   constructor(options: ApplicationConfig = {}) {
     super(options);
+
+    this.bind('rest.port').to(env.port);
 
     // Set up the custom sequence
     this.sequence(MySequence);
