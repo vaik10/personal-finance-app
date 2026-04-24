@@ -49,12 +49,14 @@
     "dotenv": "^17.4.2",
     "loopback-connector-postgresql": "^7.2.3",
     "pg": "^8.20.0",
-    "tslib": "^2.0.0"
+    "tslib": "^2.0.0",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@loopback/build": "^12.0.6",
     "@loopback/testlab": "^8.0.6",
     "@types/node": "^16.18.126",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.1",
