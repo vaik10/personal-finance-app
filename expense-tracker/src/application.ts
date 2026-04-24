@@ -1,0 +1,60 @@
+import { BootMixin } from '@loopback/boot';
+import { ApplicationConfig } from '@loopback/core';
+import {
+  RestExplorerBindings,
+  RestExplorerComponent,
+} from '@loopback/rest-explorer';
+import { RepositoryMixin } from '@loopback/repository';
+import { RestApplication } from '@loopback/rest';
+import { ServiceMixin } from '@loopback/service-proxy';
+import path from 'path';
+import { MySequence } from './sequence';
+import {env} from './config/env';
+import { DbDataSource } from './datasources';
+import {idempotencyMiddleware} from './middleware/idempotency.middleware';
+import { ErrorInterceptorProvider } from './config/error-handler';
+import { loggingMiddleware } from './middleware/logging.middleware';
+import { ExpenseRepository } from './repositories';
+
+export { ApplicationConfig };
+
+export class ExpenseTrackerApplication extends BootMixin(
+  ServiceMixin(RepositoryMixin(RestApplication)),
+) {
+  constructor(options: ApplicationConfig = {}) {
+    super(options);
+
+    this.bind('rest.port').to(env.port);
+
+    this.dataSource(DbDataSource);
+
+    // Set up the custom sequence
+    this.sequence(MySequence);
+
+    this.interceptor(ErrorInterceptorProvider);
+    this.middleware(loggingMiddleware);
+    this.middleware(idempotencyMiddleware);
+
+    this.repository(ExpenseRepository);
+
+    // Set up default home page
+    this.static('/', path.join(__dirname, '../public'));
+
+    // Customize @loopback/rest-explorer configuration here
+    this.configure(RestExplorerBindings.COMPONENT).to({
+      path: '/explorer',
+    });
+    this.component(RestExplorerComponent);
+
+    this.projectRoot = __dirname;
+    // Customize @loopback/boot Booter Conventions here
+    this.bootOptions = {
+      controllers: {
+        // Customize ControllerBooter Conventions here
+        dirs: ['controllers'],
+        extensions: ['.controller.js', '.controller.ts'],
+        nested: true,
+      },
+    };
+  }
+}
