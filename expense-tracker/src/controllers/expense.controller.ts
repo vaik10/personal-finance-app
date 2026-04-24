@@ -3,13 +3,14 @@ import {get, param, post, requestBody, response} from '@loopback/rest';
 import {ExpenseModel} from '../models';
 import {ExpenseRepository} from '../repositories';
 
+
 export class ExpenseController {
   constructor(
     @repository(ExpenseRepository)
     public expenseRepository: ExpenseRepository,
   ) {}
 
-  @get('/expenses')
+  @get('/expenses')  
   @response(200, {
     description: 'List of expenses',
     content: {'application/json': {schema: {type: 'array', items: {'x-ts-type': ExpenseModel}}}},
@@ -48,16 +49,30 @@ export class ExpenseController {
   })
   async createExpense(
     @requestBody({
+      required: true,
       content: {
         'application/json': {
           schema: {
             type: 'object',
             required: ['amount', 'category', 'date'],
             properties: {
-              amount: {type: 'number'},
-              category: {type: 'string'},
-              description: {type: 'string'},
-              date: {type: 'string', format: 'date'},
+              amount: {
+                type: 'number',
+                minimum: 0.01,
+                description: 'Amount in rupees',
+              },
+              category: {
+                type: 'string',
+                minLength: 1,
+              },
+              description: {
+                type: 'string',
+                maxLength: 255,
+              },
+              date: {
+                type: 'string',
+                format: 'date',
+              },
             },
           },
         },
@@ -70,11 +85,7 @@ export class ExpenseController {
       date: string;
     },
   ): Promise<ExpenseModel> {
-    // Basic validation
-    if (body.amount <= 0) {
-      throw new Error('Amount must be greater than 0');
-    }
-
+  
     // Convert to paise (important)
     const amountInPaise = Math.round(body.amount * 100);
 

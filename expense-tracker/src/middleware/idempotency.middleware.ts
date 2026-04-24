@@ -6,14 +6,13 @@ const service = new IdempotencyService();
 
 export const idempotencyMiddleware: Middleware = async (
   ctx: MiddlewareContext,
-  next,
+  next
 ) => {
   const req = ctx.request;
   const res = ctx.response;
 
   const key = req.headers['idempotency-key'] as string;
 
-  // Apply only to POST /expenses
   if (!key || req.method !== 'POST' || req.path !== '/expenses') {
     return next();
   }
@@ -26,19 +25,33 @@ export const idempotencyMiddleware: Middleware = async (
 
   const existing = service.get(key);
 
+  // 🟡 Case 1: Existing key
   if (existing) {
-    if (existing.requestHash === requestHash) {
+    // Different payload → conflict
+    if (existing.requestHash !== requestHash) {
+      return res.status(409).json({
+        error: 'Idempotency key reused with different payload',
+      });
+    }
+
+    // Request already completed → return cached
+    if (existing.status === 'COMPLETED') {
       return res.json(existing.response);
     }
 
+    // Request in progress → reject or wait
     return res.status(409).json({
-      error: 'Idempotency key reuse with different request',
+      error: 'Request already in progress for this idempotency key',
     });
   }
 
-  // Capture response
-  const originalJson = res.json.bind(res);
+  // 🟢 Mark as in-progress
+  service.set(key, {
+    requestHash,
+    status: 'IN_PROGRESS',
+  });
 
+  const originalJson = res.json.bind(res);
   let responseBody: unknown;
 
   res.json = (body: unknown) => {
@@ -46,11 +59,22 @@ export const idempotencyMiddleware: Middleware = async (
     return originalJson(body);
   };
 
-  await next();
+  try {
+    await next();
 
-  // Store after execution
-  service.set(key, {
-    requestHash,
-    response: responseBody,
-  });
+    // ✅ Store only if successful
+    service.set(key, {
+      requestHash,
+      status: 'COMPLETED',
+      response: responseBody,
+    });
+  } catch (err) {
+    // ❌ Cleanup on failure (important)
+    service.set(key, {
+      requestHash,
+      status: 'IN_PROGRESS',
+    });
+
+    throw err;
+  }
 };

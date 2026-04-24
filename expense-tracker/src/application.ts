@@ -12,6 +12,7 @@ import { MySequence } from './sequence';
 import {env} from './config/env';
 import { DbDataSource } from './datasources';
 import {idempotencyMiddleware} from './middleware/idempotency.middleware';
+import { ErrorInterceptorProvider } from './config/error-handler';
 
 export { ApplicationConfig };
 
@@ -29,6 +30,8 @@ export class ExpenseTrackerApplication extends BootMixin(
     this.sequence(MySequence);
 
     this.middleware(idempotencyMiddleware);
+
+    this.interceptor(ErrorInterceptorProvider);
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
