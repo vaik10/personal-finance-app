@@ -10,6 +10,7 @@ import { ServiceMixin } from '@loopback/service-proxy';
 import path from 'path';
 import { MySequence } from './sequence';
 import {env} from './config/env';
+import { DbDataSource } from './datasources';
 
 export { ApplicationConfig };
 
@@ -20,6 +21,8 @@ export class ExpenseTrackerApplication extends BootMixin(
     super(options);
 
     this.bind('rest.port').to(env.port);
+
+    this.dataSource(DbDataSource);
 
     // Set up the custom sequence
     this.sequence(MySequence);
