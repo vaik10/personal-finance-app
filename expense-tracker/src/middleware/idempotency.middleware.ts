@@ -36,7 +36,7 @@ export const idempotencyMiddleware: Middleware = async (
 
     // Request already completed → return cached
     if (existing.status === 'COMPLETED') {
-      return res.json(existing.response);
+      return existing.response;
     }
 
     // Request in progress → reject or wait
@@ -60,14 +60,15 @@ export const idempotencyMiddleware: Middleware = async (
   };
 
   try {
-    await next();
+    const result = await next();
 
     // ✅ Store only if successful
     service.set(key, {
       requestHash,
       status: 'COMPLETED',
-      response: responseBody,
+      response: result,
     });
+    return result;
   } catch (err) {
     // ❌ Cleanup on failure (important)
     service.set(key, {
